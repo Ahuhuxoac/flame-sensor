@@ -1,0 +1,58 @@
+#include <main.h>
+
+#define LCD_ENABLE_PIN PIN_E0
+#define LCD_RS_PIN PIN_E1
+#define LCD_RW_PIN PIN_E2
+#define LCD_DATA4 PIN_D4
+#define LCD_DATA5 PIN_D5
+#define LCD_DATA6 PIN_D6
+#define LCD_DATA7 PIN_D7
+
+#include <lcd.c>
+
+int1 turnLed = 0;
+
+#INT_EXT
+void ext_isr(void){
+  clear_interrupt(INT_EXT);  // Clear external interrupt flag bit
+  turnLed = !turnLed;
+}
+
+void main()
+{
+   SETUP_ADC(ADC_CLOCK_DIV_2);
+   SETUP_ADC_PORTS(AN0);
+   lcd_init();
+
+   lcd_putc("Loading...");
+   
+   ext_int_edge(H_TO_L);
+   clear_interrupt(INT_EXT); // Clear external interrupt flag bit
+   enable_interrupts(INT_EXT); // Enable external interrupt
+   enable_interrupts(GLOBAL);  
+   setup_timer_1(T0_EXT_L_TO_H|T0_DIV_1);
+   set_timer1(0);
+   
+   while(TRUE)
+   {
+      SET_ADC_CHANNEL(0);
+      delay_us(10);
+      
+      signed int8 temp = read_adc() / 2.046;
+      
+      if(temp > 50 || turnLed){
+         output_high(pin_D0);
+      }else{
+         output_low(pin_D0);
+      }
+            
+      lcd_putc("\f");
+      lcd_gotoxy(1, 1);
+      printf(lcd_putc, "Nhiet do: %d\"C", temp);
+      lcd_gotoxy(1, 2);
+      printf(lcd_putc, "%02LX", get_timer1());
+      delay_ms(200);
+      //TODO: User Code
+   }
+
+}

@@ -1,0 +1,72 @@
+#include <main.h>
+
+#define LCD_ENABLE_PIN PIN_E0
+#define LCD_RS_PIN PIN_E1
+#define LCD_RW_PIN PIN_E2
+#define LCD_DATA4 PIN_D4
+#define LCD_DATA5 PIN_D5
+#define LCD_DATA6 PIN_D6
+#define LCD_DATA7 PIN_D7
+
+#include <lcd.c>
+
+//!void toggle_led()
+//!{
+//!   if(input_state(pin_D0)){
+//!      output_low(pin_D0);
+//!   }else{
+//!      output_high(pin_D0);
+//!   }
+//!}
+
+#INT_EXT
+void ext_isr(void){
+  clear_interrupt(INT_EXT);  // Clear external interrupt flag bit
+  output_toggle(PIN_D0);
+}
+
+void main()
+{
+   SETUP_ADC(ADC_CLOCK_DIV_2);
+   SETUP_ADC_PORTS(AN0);
+   lcd_init();
+//!   lcd_putc("LAP TRINH PIC");
+//!   delay_ms(2000);
+//!   lcd_putc("\f");
+   lcd_putc("Loading...");
+   
+//!   int1 turnLed = 0;
+   ext_int_edge(H_TO_L);
+   clear_interrupt(INT_EXT); // Clear external interrupt flag bit
+   enable_interrupts(INT_EXT); // Enable external interrupt
+   enable_interrupts(GLOBAL);  
+   
+   while(TRUE)
+   {
+      SET_ADC_CHANNEL(0);
+      delay_us(10);
+      
+//!      if(input(pin_B0)){
+//!
+//!         if(turnLed)
+//!            turnLed = 0;
+//!         else 
+//!            turnLed = 1;
+//!      }
+      
+      float temp = read_adc() / 2.046;
+      
+      if(temp > 50 ){
+         output_high(pin_D0);
+      }else{
+         output_low(pin_D0);
+      }
+            
+      lcd_putc("\f");
+      lcd_gotoxy(1, 2);
+      printf(lcd_putc, "Nhiet do: %f", temp);
+      delay_ms(200);
+      //TODO: User Code
+   }
+
+}
